@@ -25,39 +25,66 @@ var chartGroup = svg.append("g")
 
 // read data
 input.then(function(data) {
-    console.log(data);
 
-    abbreviations = data.map(e => e.abbr)
-
+    // parse data as numbers
     data.forEach(function(d) {
         d.poverty = +d.poverty;
         d.healthcare = +d.healthcare;
     })
 
-    // add x axis
+    // scale functions
     var xScale = d3.scaleLinear()
-      .domain([0, d3.max(data, d=> d.poverty) +2])
+      .domain([0, d3.max(data, d => d.poverty) +2])
       .range([0, width]);
+
+    var yScale = d3.scaleLinear()
+      .domain([0, d3.max(data, d => d.healthcare) +2])
+      .range([height, 0]);
+
+    // axis functions
+    var bottomAxis = d3.axisBottom(xScale);
+    var leftAxis = d3.axisLeft(yScale);
+
+    // append axes
     chartGroup.append("g")
       .attr("transform", `translate(0, ${height})`)
-      .call(d3.axisBottom(xScale));
+      .call(bottomAxis)
 
-    // add y axis 
-    var yScale = d3.scaleLinear()
-      .domain([0, d3.max(data, d=> d.healthcare) +2])
-      .range([height, 0]);
     chartGroup.append("g")
-      .call(d3.axisLeft(yScale));
+      .call(leftAxis)
 
-    // add scatter
-    chartGroup.selectAll("circle")
+    // axes labels
+    chartGroup.append("text")
+      .attr("y", height + margin.bottom/2)
+      .attr("x", width / 2)
+      .text("In Poverty (%)");
+
+    chartGroup.append("text")
+      .attr("transform", "rotate(-90)")
+      .attr("y", 0 - margin.left)
+      .attr("x", 0 - (height / 2))
+      .attr("dy", "1em")
+      .text("Lacks Healthcare (%)");
+
+    // add circles
+    var radius = 15;
+    var circles = svg.selectAll("g")
       .data(data)
       .enter()
-      .append("circle")
+      .append("g");
+
+    circles.append("circle")
       .attr("cx", d => xScale(d.poverty))
       .attr("cy", d => yScale(d.healthcare))
-      .attr("r", 1.5)
-      .attr("fill", "pink")
+      .attr("r", radius)
+      .attr("fill", "blue")
       .attr("opacity", ".5");
-  
+
+    // add state abbreviations
+    circles.append("text")
+      .attr("x", d => xScale(d.poverty) - radius/1.3)
+      .attr("y", d => yScale(d.healthcare) + radius/2)
+      .text(d => d.abbr)
+      .style("fill", "white");
+
 }).catch(error => console.log(error));
